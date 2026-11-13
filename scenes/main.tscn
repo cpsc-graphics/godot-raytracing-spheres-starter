@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://b6yl80vkbg10o"]
+
+[ext_resource type="Script" uid="uid://du6vff5jmqe42" path="res://scripts/camera_rig.gd" id="1_o5qli"]
+[ext_resource type="Script" uid="uid://cjslc1r71gxbp" path="res://scripts/ray_tracer.gd" id="2_sugp2"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_0wfyh"]
+load_path = "res://.godot/imported/checkerboard.jpeg-d2d763cef206e70d7a5fce32c2f4264b.ctex"
+
+[node name="Main" type="Node3D" unique_id=563772554]
+
+[node name="CameraRig" type="Node3D" parent="." unique_id=1112285069]
+script = ExtResource("1_o5qli")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=895691621]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+fov = 60.0
+near = 0.1
+far = 100.0
+
+[node name="RayTracer" type="Node" parent="." unique_id=1157630252]
+script = ExtResource("2_sugp2")
+texture_slots = Array[Texture2D]([SubResource("CompressedTexture2D_0wfyh")])
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1882888382]
+
+[node name="TextureRect" type="TextureRect" parent="CanvasLayer" unique_id=1211854693]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
