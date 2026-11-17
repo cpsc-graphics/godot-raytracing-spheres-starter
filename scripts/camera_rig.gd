@@ -94,5 +94,4 @@ func update_camera():
 	)
 
 	camera.position = target + direction * distance
-
 	camera.look_at(target, Vector3.UP)

@@ -194,18 +194,17 @@ void main() {
     // INTERSECT ALL SPHERES
     // --------------------------------------------------
 
-    float closest_t = 1e20;
+    
+    
+    // start with t at infinity
+    float closest_t = 3e30;
 
     int closest_sphere = -1;
-
     int sphere_count = int(camera.scene_info.x);
 
     for (int i = 0; i < sphere_count; i++) {
-
         vec3 center = spheres[i].center_radius.xyz;
-
         float radius = spheres[i].center_radius.w;
-
         float t = intersect_sphere(
             ray_origin,
             ray_direction,
@@ -240,7 +239,7 @@ void main() {
         );
 
         float rotation_angle = camera.texture_info.x;
-	vec2 tex_uv = sphere_uv(normal, rotation_angle);
+	  vec2 tex_uv = sphere_uv(normal, rotation_angle);
 
         int material_id = int(sphere.material.x);
 
@@ -274,7 +273,7 @@ void main() {
 
     }
 
-
+    // Finally store the pixel to the image
     imageStore(
         output_image,
         pixel,

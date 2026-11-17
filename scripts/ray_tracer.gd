@@ -1,25 +1,27 @@
 
 extends Node
-
 const COMPUTE_SHADER_PATH = "res://shaders/raytrace.glsl"
 
+
+# starting image dimensions
 const WIDTH = 1024
 const HEIGHT = 1024
 
+# Typical workgroups consits of 8x8 thread blocks
 const WORKGROUP_SIZE = 8
 
+# Texture slots are exposed in the inspector
 @export var texture_slots: Array[Texture2D] = []
-
 @export var camera_path: NodePath = ^"../CameraRig/Camera3D"
-
 @export var display_path: NodePath = \
     "../CanvasLayer/TextureRect"
 
+# The animation is controlled by a single state variable that
+# is manipulated via keyboard controls.
 var rotation_radians := 0.0
 @export var rotation_speed := 1.5
 
 var rd: RenderingDevice
-
 var shader: RID
 var pipeline: RID
 var uniform_set: RID
@@ -29,7 +31,6 @@ var sphere_buffer: RID
 var sampler: RID
 
 var gpu_textures: Array[RID] = []
-
 var display_texture: ImageTexture
 
 var camera: Camera3D
@@ -44,6 +45,8 @@ var initialized := false
 
 # Each sphere has:
 # Center XYZ, radius, material ID
+#
+# Sphere data is pused to the compute shader
 
 var sphere_data = [
 	{
@@ -103,7 +106,6 @@ func _ready():
 	)
 
 	display.texture = display_texture
-
 	initialized = true
 
 
@@ -112,7 +114,6 @@ func _ready():
 # --------------------------------------------------
 
 func create_compute_shader():
-
 	var shader_file = load(COMPUTE_SHADER_PATH) as RDShaderFile
 
 	if shader_file == null:
@@ -120,9 +121,7 @@ func create_compute_shader():
 		return
 
 	var spirv: RDShaderSPIRV = shader_file.get_spirv()
-
 	shader = rd.shader_create_from_spirv(spirv)
-
 	pipeline = rd.compute_pipeline_create(shader)
 
 
@@ -131,9 +130,7 @@ func create_compute_shader():
 # --------------------------------------------------
 
 func create_output_texture():
-
 	var format := RDTextureFormat.new()
-
 	format.texture_type = RenderingDevice.TEXTURE_TYPE_2D
 
 	format.width = WIDTH
@@ -144,7 +141,6 @@ func create_output_texture():
 	format.mipmaps = 1
 
 	format.format = RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM
-
 	format.usage_bits = (
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT |
 		RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
@@ -161,15 +157,11 @@ func create_output_texture():
 # --------------------------------------------------
 
 func create_sphere_buffer():
-
 	var data := PackedFloat32Array()
 
 	for sphere in sphere_data:
-
 		var center: Vector3 = sphere["center"]
-
 		var radius: float = sphere["radius"]
-
 		var material: int = sphere["material"]
 
 		# First vec4: center.xyz, radius.
@@ -193,11 +185,10 @@ func create_sphere_buffer():
 
 
 # --------------------------------------------------
-# CREATE SAMPLER
+# CREATE SAMPLER FOR TEXTURE(s)
 # --------------------------------------------------
 
 func create_sampler():
-
 	var sampler_state := RDSamplerState.new()
 
 	sampler_state.mag_filter = RenderingDevice.SAMPLER_FILTER_LINEAR
@@ -223,7 +214,6 @@ func create_fallback_texture() -> Texture2D:
 	)
 
 	image.fill(Color.WHITE)
-
 	return ImageTexture.create_from_image(image)
 
 
@@ -234,7 +224,6 @@ func create_fallback_texture() -> Texture2D:
 func create_input_textures():
 
 	for i in range(4):
-
 		var source_texture: Texture2D
 
 		if i < texture_slots.size() and texture_slots[i] != null:
@@ -245,7 +234,6 @@ func create_input_textures():
 		var image := source_texture.get_image()
 
 		image.convert(Image.FORMAT_RGBA8)
-
 		var format := RDTextureFormat.new()
 
 		format.texture_type = RenderingDevice.TEXTURE_TYPE_2D
@@ -273,22 +261,20 @@ func create_input_textures():
 
 
 # --------------------------------------------------
-# CREATE UNIFORM SET
+# CREATE UNIFORM SET. 
+# Uniform buffers will be sent to the shader
 # --------------------------------------------------
 
 func create_uniform_set():
-
 	var uniforms: Array[RDUniform] = []
-
+	
 	# Binding 0: Sphere buffer.
 
 	var sphere_uniform := RDUniform.new()
-
 	sphere_uniform.uniform_type = \
 		RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
 
 	sphere_uniform.binding = 0
-
 	sphere_uniform.add_id(sphere_buffer)
 
 	uniforms.append(sphere_uniform)
@@ -297,28 +283,22 @@ func create_uniform_set():
 	# Binding 1: Output storage image.
 
 	var output_uniform := RDUniform.new()
-
 	output_uniform.uniform_type = \
 		RenderingDevice.UNIFORM_TYPE_IMAGE
 
 	output_uniform.binding = 1
-
 	output_uniform.add_id(output_texture)
 
 	uniforms.append(output_uniform)
 
-
 	# Bindings 2-5: Texture slots.
-
 	for i in range(4):
-
 		var texture_uniform := RDUniform.new()
 
 		texture_uniform.uniform_type = \
 			RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
 
 		texture_uniform.binding = i + 2
-
 		texture_uniform.add_id(sampler)
 		texture_uniform.add_id(gpu_textures[i])
 
@@ -334,6 +314,8 @@ func create_uniform_set():
 
 # --------------------------------------------------
 # CAMERA PUSH CONSTANTS
+# Camera parameters are better sent as push constants
+# as camera parameters can change on a per frame basis. 
 # --------------------------------------------------
 
 func get_camera_data() -> PackedByteArray:
@@ -350,15 +332,13 @@ func get_camera_data() -> PackedByteArray:
 	)
 
 	var data := PackedFloat32Array()
-
+	
 	# Camera origin.
-
 	data.append_array(PackedFloat32Array([
 		origin.x, origin.y, origin.z, 0.0
 	]))
 
 	# Camera right.
-
 	data.append_array(PackedFloat32Array([
 		right.x, right.y, right.z, 0.0
 	]))
@@ -389,7 +369,7 @@ func get_camera_data() -> PackedByteArray:
 		0.0
 	]))
 	
-	# Rotation information.
+	# Rotation information / animation state
 	data.append_array(PackedFloat32Array([
 		rotation_radians,
 		0.0,
