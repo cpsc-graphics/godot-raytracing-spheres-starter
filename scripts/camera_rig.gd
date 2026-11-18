@@ -62,7 +62,9 @@ func _unhandled_input(event):
 		if rotating:
 
 			yaw -= delta.x * orbit_sensitivity
-			pitch -= delta.y * orbit_sensitivity
+
+            # Use += for pitch to match the camera ray's Y-axis orientation.
+			pitch += delta.y * orbit_sensitivity
 
 			pitch = clamp(
 				pitch,

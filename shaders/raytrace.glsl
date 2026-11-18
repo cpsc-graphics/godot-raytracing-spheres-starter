@@ -176,6 +176,7 @@ void main() {
 
     vec2 ndc = uv * 2.0 - 1.0;
 
+    // Flip Y axis to align the ray direction with the camera coordinates.
     ndc.y = -ndc.y;
 
     float aspect = camera.image_info.z;
@@ -186,7 +187,7 @@ void main() {
     vec3 ray_direction = normalize(
         camera.camera_forward.xyz
         + camera.camera_right.xyz * ndc.x * aspect * tan_half_fov
-        + camera.camera_up.xyz * (-ndc.y) * tan_half_fov
+        + camera.camera_up.xyz * ndc.y * tan_half_fov
     );
 
 
