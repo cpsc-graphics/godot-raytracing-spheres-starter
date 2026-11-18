@@ -132,9 +132,9 @@ float intersect_sphere(
 
 vec2 sphere_uv(vec3 normal, float rotation_angle) {
 
-    // Calculate longitude.
-    float u = atan(normal.z, normal.x) /
-              (2.0 * 3.14159265) + 0.5;
+    // Calculate longitude and reverse u to match the texture orientation.
+    float u = 1 - (atan(normal.z, normal.x) /
+              (2.0 * 3.14159265) + 0.5);
 
     // Calculate latitude.
     float v = acos(
@@ -142,7 +142,7 @@ vec2 sphere_uv(vec3 normal, float rotation_angle) {
     ) / 3.14159265;
 
     // Rotate texture around the polar axis.
-    u += rotation_angle / (2.0 * 3.14159265);
+    u -= rotation_angle / (2.0 * 3.14159265);
 
     // Wrap texture coordinates.
     u = fract(u);
